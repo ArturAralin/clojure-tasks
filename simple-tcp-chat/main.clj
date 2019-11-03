@@ -32,15 +32,15 @@
     (future
       ; request user name
       (sock-send sock "Enter your name: ")
-      (let [user (get @users usr-id)
-            inp-name (sock-read-line sock)
-            updated-user (conj user {:name inp-name :online true})]
-        (reset! users (conj @users {usr-id updated-user})))
+      (reset! users
+              (-> @users
+                  (assoc-in [usr-id :name] (sock-read-line sock))
+                  (assoc-in [usr-id :online] true)))
+
       ; users main loop
       (try
         (while (not (.isClosed sock))
-          (let [
-                sender-name (:name (get @users usr-id))
+          (let [sender-name (:name (get @users usr-id))
                 msg (sock-read-line sock)]
             (broadcast usr-id (str "[" sender-name "]: " msg "\n"))))
         (catch SocketException e (println "socket closed")))
@@ -80,4 +80,4 @@
               (disconnect-all-users @users))
      }))
 
-(def srv (tcp-chat-server 6669))
+(tcp-chat-server 6669)
