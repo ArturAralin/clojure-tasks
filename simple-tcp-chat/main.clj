@@ -28,8 +28,8 @@
         (sock-send sock msg)))))
 
 (defn accept-client [usr-id usr]
-  (let [sock (:socket usr)]
-    (future
+  (future
+    (with-open [sock (:socket usr)]
       ; request user name
       (sock-send sock "Enter your name: ")
       (reset! users
@@ -42,12 +42,12 @@
         (while (not (.isClosed sock))
           (let [sender-name (:name (get @users usr-id))
                 msg (sock-read-line sock)]
-            (broadcast usr-id (str "[" sender-name "]: " msg "\n"))))
+            (if (nil? msg)
+              (.close sock)
+              (broadcast usr-id (str "[" sender-name "]: " msg "\n")))))
         (catch SocketException e (println "socket closed")))
       (reset! users (dissoc @users usr-id))
-      (println (str "client " usr-id " has been disconnected"))
-      (.close sock)
-      nil)))
+      (println (str "client " usr-id " has been disconnected")))))
 
 (defn disconnect-all-users [usrs]
   (doseq [usr usrs]
@@ -57,8 +57,7 @@
         .close)))
 
 (defn tcp-chat-server [port]
-  (let [
-        running (atom true)]
+  (let [running (atom true)]
     (future
       (with-open [s (ServerSocket. port)]
         (while @running
