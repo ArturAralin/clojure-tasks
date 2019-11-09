@@ -46,9 +46,11 @@
         headers (:headers opts)
         conn (.openConnection (URL. url))]
     ; configure request
-    (.setRequestMethod conn method)
-    (.setConnectTimeout conn (:connect-timeout opts))
-    (.setReadTimeout conn (:read-timeout opts))
+    (doto conn
+      (.setRequestMethod method)
+      (.setConnectTimeout (:connect-timeout opts))
+      (.setReadTimeout (:read-timeout opts)))
+
     ; set headers
     (set-headers headers conn)
     ; process request
